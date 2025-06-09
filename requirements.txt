@@ -4,3 +4,4 @@ requests
 sqlalchemy
 boto3
 pymysql
+python-multipart
