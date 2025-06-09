@@ -9,28 +9,28 @@ import os
 import requests
 import random
 
-DATABASE_URL = os.getenv("DATABASE_URL", "mysql+pymysql://user:password@localhost:3306/image_metadata")
+# DATABASE_URL = os.getenv("DATABASE_URL", "mysql+pymysql://user:password@localhost:3306/image_metadata")
 
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
+# engine = create_engine(DATABASE_URL)
+# SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# Base = declarative_base()
 
 app = FastAPI()
 s3 = boto3.client("s3")
 S3_BUCKET = os.getenv("S3_BUCKET_NAME", "default-bucket")
 
 
-class ImageMetadata(Base):
-    __tablename__ = "images"
-
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, nullable=False)
-    size = Column(Integer)
-    extension = Column(String)
-    last_modified = Column(DateTime, default=datetime.utcnow)
-
-
-Base.metadata.create_all(bind=engine)
+# class ImageMetadata(Base):
+#     __tablename__ = "images"
+#
+#     id = Column(Integer, primary_key=True, index=True)
+#     name = Column(String, unique=True, nullable=False)
+#     size = Column(Integer)
+#     extension = Column(String)
+#     last_modified = Column(DateTime, default=datetime.utcnow)
+#
+#
+# Base.metadata.create_all(bind=engine)
 
 
 @app.get("/")
@@ -64,16 +64,16 @@ async def upload_image(file: UploadFile = File(...)):
 
     s3.upload_fileobj(File(...), S3_BUCKET, filename)
 
-    db = SessionLocal()
-    db_image = ImageMetadata(
-        name=filename,
-        size=size,
-        extension=extension,
-        last_modified=datetime.now()
-    )
-    db.add(db_image)
-    db.commit()
-    db.close()
+    # db = SessionLocal()
+    # db_image = ImageMetadata(
+    #     name=filename,
+    #     size=size,
+    #     extension=extension,
+    #     last_modified=datetime.now()
+    # )
+    # db.add(db_image)
+    # db.commit()
+    # db.close()
     return {"message": "Image uploaded successfully."}
 
 
@@ -89,32 +89,32 @@ def download_image(name: str):
 
 @app.get("/metadata/{name}")
 def get_metadata(name: str):
-    db = SessionLocal()
-    image = db.query(ImageMetadata).filter(ImageMetadata.name == name).first()
-    db.close()
-    if image:
-        return {
-            "name": image.name,
-            "size": image.size,
-            "extension": image.extension,
-            "last_modified": image.last_modified
-        }
+    # db = SessionLocal()
+    # image = db.query(ImageMetadata).filter(ImageMetadata.name == name).first()
+    # db.close()
+    # if image:
+    #     return {
+    #         "name": image.name,
+    #         "size": image.size,
+    #         "extension": image.extension,
+    #         "last_modified": image.last_modified
+    #     }
     raise HTTPException(status_code=404, detail="Metadata not found")
 
 
 @app.get("/metadata/random")
 def get_random_metadata():
-    db = SessionLocal()
-    images = db.query(ImageMetadata).all()
-    db.close()
-    if images:
-        image = random.choice(images)
-        return {
-            "name": image.name,
-            "size": image.size,
-            "extension": image.extension,
-            "last_modified": image.last_modified
-        }
+    # db = SessionLocal()
+    # images = db.query(ImageMetadata).all()
+    # db.close()
+    # if images:
+    #     image = random.choice(images)
+    #     return {
+    #         "name": image.name,
+    #         "size": image.size,
+    #         "extension": image.extension,
+    #         "last_modified": image.last_modified
+    #     }
     raise HTTPException(status_code=404, detail="No images found")
 
 
@@ -122,12 +122,12 @@ def get_random_metadata():
 def delete_image(name: str):
     try:
         s3.delete_object(Bucket=S3_BUCKET, Key=name)
-        db = SessionLocal()
-        image = db.query(ImageMetadata).filter(ImageMetadata.name == name).first()
-        if image:
-            db.delete(image)
-            db.commit()
-        db.close()
+        # db = SessionLocal()
+        # image = db.query(ImageMetadata).filter(ImageMetadata.name == name).first()
+        # if image:
+        #     db.delete(image)
+        #     db.commit()
+        # db.close()
         return {"message": "Image deleted successfully."}
     except Exception:
         raise HTTPException(status_code=500, detail="Error deleting image")
