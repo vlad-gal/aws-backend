@@ -94,9 +94,17 @@ def download_image(name: str):
         file_stream = io.BytesIO()
         s3.download_fileobj(S3_BUCKET, name, file_stream)
         file_stream.seek(0)
-        return StreamingResponse(file_stream, media_type="application/octet-stream", headers={
-            "Content-Disposition": f"attachment; filename={name}"
-        })
+        media_type = "application/octet-stream"
+        if name.lower().endswith((".jpg", ".jpeg")):
+            media_type = "image/jpeg"
+        elif name.lower().endswith(".png"):
+            media_type = "image/png"
+
+        return StreamingResponse(
+            file_stream,
+            media_type=media_type,
+            headers={"Content-Disposition": f"attachment; filename={name}"}
+        )
     except Exception as e:
         raise HTTPException(status_code=404, detail="Image not found")
 
