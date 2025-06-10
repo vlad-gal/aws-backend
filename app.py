@@ -61,11 +61,11 @@ def get_az_and_region():
 @app.post("/upload")
 async def upload_image(file: UploadFile = File(...)):
     content = await file.read()
-    filename = str(file.filename)
+    filename = file.filename
     size = len(content)
     extension = filename.split(".")[-1]
 
-    s3.upload_file(file, S3_BUCKET, filename)
+    s3.upload_file(file.file, S3_BUCKET, filename)
 
     # db = SessionLocal()
     # db_image = ImageMetadata(
