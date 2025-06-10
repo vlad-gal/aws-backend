@@ -16,9 +16,11 @@ import random
 # Base = declarative_base()
 
 app = FastAPI()
+boto3.setup_default_session(region_name='us-east-1')
 s3 = boto3.client("s3")
 ssm = boto3.client("ssm")
 S3_BUCKET = ssm.get_parameter(Name="bucket")["Parameter"]["Value"]
+print(S3_BUCKET)
 
 
 # class ImageMetadata(Base):
