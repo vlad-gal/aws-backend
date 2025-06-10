@@ -20,7 +20,6 @@ boto3.setup_default_session(region_name='us-east-1')
 s3 = boto3.client("s3")
 ssm = boto3.client("ssm")
 S3_BUCKET = ssm.get_parameter(Name="bucket")["Parameter"]["Value"]
-print(S3_BUCKET)
 
 
 # class ImageMetadata(Base):
@@ -83,9 +82,8 @@ async def upload_image(file: UploadFile = File(...)):
 @app.get("/download/{name}")
 def download_image(name: str):
     try:
-        file_path = f"/tmp/{name}"
-        s3.download_file(S3_BUCKET, name, file_path)
-        return FileResponse(file_path, media_type="application/octet-stream", filename=name)
+        s3.download_file(S3_BUCKET, name, name)
+        return FileResponse(name, media_type="application/octet-stream", filename=name)
     except Exception:
         raise HTTPException(status_code=404, detail="Image not found")
 
