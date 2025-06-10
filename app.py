@@ -65,7 +65,7 @@ async def upload_image(file: UploadFile = File(...)):
     size = len(content)
     extension = filename.split(".")[-1]
 
-    s3.upload_fileobj(file, S3_BUCKET, filename)
+    s3.upload_file(file, S3_BUCKET, filename)
 
     # db = SessionLocal()
     # db_image = ImageMetadata(
