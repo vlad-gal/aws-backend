@@ -1,3 +1,5 @@
+import io
+
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import FileResponse
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
@@ -8,6 +10,8 @@ import boto3
 import os
 import requests
 import random
+
+from starlette.responses import StreamingResponse
 
 # DATABASE_URL = os.getenv("DATABASE_URL", "mysql+pymysql://user:password@localhost:3306/image_metadata")
 
@@ -82,11 +86,14 @@ async def upload_image(file: UploadFile = File(...)):
 @app.get("/download/{name}")
 def download_image(name: str):
     try:
-        s3.download_file(S3_BUCKET, name, name)
-        return FileResponse(name, media_type="application/octet-stream", filename=name)
-    except Exception:
+        file_stream = io.BytesIO()
+        s3.download_fileobj(S3_BUCKET, name, file_stream)
+        file_stream.seek(0)
+        return StreamingResponse(file_stream, media_type="application/octet-stream", headers={
+            "Content-Disposition": f"attachment; filename={name}"
+        })
+    except Exception as e:
         raise HTTPException(status_code=404, detail="Image not found")
-
 
 @app.get("/metadata/{name}")
 def get_metadata(name: str):
