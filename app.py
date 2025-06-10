@@ -61,7 +61,7 @@ def get_az_and_region():
 @app.post("/upload")
 async def upload_image(file: UploadFile = File(...)):
     content = await file.read()
-    filename = file.filename
+    filename = str(file.filename)
     size = len(content)
     extension = filename.split(".")[-1]
 
