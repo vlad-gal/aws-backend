@@ -63,24 +63,29 @@ def get_az_and_region():
 
 @app.post("/upload")
 async def upload_image(file: UploadFile = File(...)):
-    content = await file.read()
-    filename = file.filename
-    size = len(content)
-    extension = filename.split(".")[-1]
+    try:
+        filename = file.filename
+        extension = filename.split(".")[-1]
 
-    s3.upload_fileobj(file.file, S3_BUCKET, filename)
+        content = await file.read()
+        size = len(content)
 
-    # db = SessionLocal()
-    # db_image = ImageMetadata(
-    #     name=filename,
-    #     size=size,
-    #     extension=extension,
-    #     last_modified=datetime.now()
-    # )
-    # db.add(db_image)
-    # db.commit()
-    # db.close()
-    return {"message": "Image uploaded successfully."}
+        buffer = io.BytesIO(content)
+
+        s3.upload_fileobj(buffer, S3_BUCKET, filename)
+
+        # db_image = Image(
+        #     name=filename,
+        #     size=size,
+        #     extension=extension,
+        #     last_update=datetime.utcnow()
+        # )
+        # db.add(db_image)
+        # db.commit()
+
+        return {"message": "Image uploaded", "name": filename, "size": size}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
 
 @app.get("/download/{name}")
