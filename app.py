@@ -17,7 +17,8 @@ import random
 
 app = FastAPI()
 s3 = boto3.client("s3")
-S3_BUCKET = os.getenv("S3_BUCKET_NAME", "default-bucket")
+ssm = boto3.client("ssm")
+S3_BUCKET = ssm.get_parameter(Name="bucket")["Parameter"]["Value"]
 
 
 # class ImageMetadata(Base):
@@ -62,7 +63,7 @@ async def upload_image(file: UploadFile = File(...)):
     size = len(content)
     extension = filename.split(".")[-1]
 
-    s3.upload_fileobj(File(...), S3_BUCKET, filename)
+    s3.upload_fileobj(file, S3_BUCKET, filename)
 
     # db = SessionLocal()
     # db_image = ImageMetadata(
