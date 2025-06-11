@@ -115,32 +115,32 @@ def download_image(name: str):
 
 @app.get("/metadata/{name}")
 def get_metadata(name: str):
-    # db = SessionLocal()
-    # image = db.query(ImageMetadata).filter(ImageMetadata.name == name).first()
-    # db.close()
-    # if image:
-    #     return {
-    #         "name": image.name,
-    #         "size": image.size,
-    #         "extension": image.extension,
-    #         "last_modified": image.last_modified
-    #     }
+    db = SessionLocal()
+    image = db.query(ImageMetadata).filter(ImageMetadata.name == name).first()
+    db.close()
+    if image:
+        return {
+            "name": image.name,
+            "size": image.size,
+            "extension": image.extension,
+            "last_modified": image.last_modified
+        }
     raise HTTPException(status_code=404, detail="Metadata not found")
 
 
 @app.get("/metadata/random")
 def get_random_metadata():
-    # db = SessionLocal()
-    # images = db.query(ImageMetadata).all()
-    # db.close()
-    # if images:
-    #     image = random.choice(images)
-    #     return {
-    #         "name": image.name,
-    #         "size": image.size,
-    #         "extension": image.extension,
-    #         "last_modified": image.last_modified
-    #     }
+    db = SessionLocal()
+    images = db.query(ImageMetadata).all()
+    db.close()
+    if images:
+        image = random.choice(images)
+        return {
+            "name": image.name,
+            "size": image.size,
+            "extension": image.extension,
+            "last_modified": image.last_modified
+        }
     raise HTTPException(status_code=404, detail="No images found")
 
 
@@ -148,12 +148,12 @@ def get_random_metadata():
 def delete_image(name: str):
     try:
         s3.delete_object(Bucket=S3_BUCKET, Key=name)
-        # db = SessionLocal()
-        # image = db.query(ImageMetadata).filter(ImageMetadata.name == name).first()
-        # if image:
-        #     db.delete(image)
-        #     db.commit()
-        # db.close()
+        db = SessionLocal()
+        image = db.query(ImageMetadata).filter(ImageMetadata.name == name).first()
+        if image:
+            db.delete(image)
+            db.commit()
+        db.close()
         return {"message": "Image deleted successfully."}
     except Exception:
         raise HTTPException(status_code=500, detail="Error deleting image")
