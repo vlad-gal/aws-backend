@@ -1,19 +1,14 @@
 import io
+import random
+from datetime import datetime
 
+import boto3
+import requests
 from fastapi import FastAPI, UploadFile, File, HTTPException
-from fastapi.responses import FileResponse
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from datetime import datetime
-import boto3
-import os
-import requests
-import random
-
 from starlette.responses import StreamingResponse
-
-# DATABASE_URL = os.getenv("DATABASE_URL", "mysql+pymysql://user:password@localhost:3306/image_metadata")
 
 app = FastAPI()
 boto3.setup_default_session(region_name='us-east-1')
@@ -113,6 +108,7 @@ def download_image(name: str):
     except Exception as e:
         raise HTTPException(status_code=404, detail="Image not found")
 
+
 @app.get("/metadata/{name}")
 def get_metadata(name: str):
     db = SessionLocal()
@@ -128,7 +124,7 @@ def get_metadata(name: str):
     raise HTTPException(status_code=404, detail="Metadata not found")
 
 
-@app.get("/metadata/random")
+@app.get("/random")
 def get_random_metadata():
     db = SessionLocal()
     images = db.query(ImageMetadata).all()
