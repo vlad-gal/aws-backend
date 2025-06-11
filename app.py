@@ -83,7 +83,7 @@ async def upload_image(file: UploadFile = File(...)):
             name=filename,
             size=size,
             extension=extension,
-            last_update=datetime.utcnow()
+            last_modified=datetime.utcnow()
         )
         db.add(db_image)
         db.commit()
