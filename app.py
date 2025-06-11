@@ -14,10 +14,15 @@ app = FastAPI()
 boto3.setup_default_session(region_name='us-east-1')
 s3 = boto3.client("s3")
 ssm = boto3.client("ssm")
+sqs = boto3.client("sqs")
+sns = boto3.client("sns")
+
 S3_BUCKET = ssm.get_parameter(Name="bucket")["Parameter"]["Value"]
 DB_URL = ssm.get_parameter(Name="/db/url")["Parameter"]["Value"]
 DB_PASSWORD = ssm.get_parameter(Name="/db/password", WithDecryption=True)["Parameter"]["Value"]
 DB_USERNAME = ssm.get_parameter(Name="/db/username")["Parameter"]["Value"]
+SNS_TOPIC_ARN = ssm.get_parameter(Name="sns_topic")["Parameter"]["Value"]
+SQS_URL = ssm.get_parameter(Name="sqs_queue")["Parameter"]["Value"]
 
 engine = create_engine(f"mysql+pymysql://{DB_USERNAME}:{DB_PASSWORD}@{DB_URL}:3306/image_metadata")
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -153,3 +158,23 @@ def delete_image(name: str):
         return {"message": "Image deleted successfully."}
     except Exception:
         raise HTTPException(status_code=500, detail="Error deleting image")
+
+
+@app.post("/subscribe")
+def subscribe(email: str):
+    sns.subscribe(
+        TopicArn=SNS_TOPIC_ARN,
+        Protocol="email",
+        Endpoint=email
+    )
+    return {"message": f"Confirmation email sent to {email}"}
+
+
+@app.post("/unsubscribe")
+def unsubscribe(email: str):
+    subscriptions = sns.list_subscriptions_by_topic(TopicArn=SNS_TOPIC_ARN)["Subscriptions"]
+    for sub in subscriptions:
+        if sub["Endpoint"] == email:
+            sns.unsubscribe(SubscriptionArn=sub["SubscriptionArn"])
+            return {"message": f"Unsubscribed {email}"}
+    return {"error": "Subscription not found"}, 404
