@@ -1,7 +1,8 @@
 import io
 import json
 import random
-from datetime import datetime, time
+import time
+from datetime import datetime
 
 import boto3
 import requests
