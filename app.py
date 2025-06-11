@@ -15,28 +15,31 @@ from starlette.responses import StreamingResponse
 
 # DATABASE_URL = os.getenv("DATABASE_URL", "mysql+pymysql://user:password@localhost:3306/image_metadata")
 
-# engine = create_engine(DATABASE_URL)
-# SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-# Base = declarative_base()
-
 app = FastAPI()
 boto3.setup_default_session(region_name='us-east-1')
 s3 = boto3.client("s3")
 ssm = boto3.client("ssm")
 S3_BUCKET = ssm.get_parameter(Name="bucket")["Parameter"]["Value"]
+DB_URL = ssm.get_parameter(Name="/db/url")["Parameter"]["Value"]
+DB_PASSWORD = ssm.get_parameter(Name="/db/password", WithDecryption=True)["Parameter"]["Value"]
+DB_USERNAME = ssm.get_parameter(Name="/db/username")["Parameter"]["Value"]
+
+engine = create_engine(f"mysql+pymysql://{DB_USERNAME}:{DB_PASSWORD}@{DB_URL}:3306/image_metadata")
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
 
 
-# class ImageMetadata(Base):
-#     __tablename__ = "images"
-#
-#     id = Column(Integer, primary_key=True, index=True)
-#     name = Column(String, unique=True, nullable=False)
-#     size = Column(Integer)
-#     extension = Column(String)
-#     last_modified = Column(DateTime, default=datetime.utcnow)
-#
-#
-# Base.metadata.create_all(bind=engine)
+class ImageMetadata(Base):
+    __tablename__ = "images"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, nullable=False)
+    size = Column(Integer)
+    extension = Column(String)
+    last_modified = Column(DateTime, default=datetime.utcnow)
+
+
+Base.metadata.create_all(bind=engine)
 
 
 @app.get("/")
@@ -74,14 +77,16 @@ async def upload_image(file: UploadFile = File(...)):
 
         s3.upload_fileobj(buffer, S3_BUCKET, filename)
 
-        # db_image = Image(
-        #     name=filename,
-        #     size=size,
-        #     extension=extension,
-        #     last_update=datetime.utcnow()
-        # )
-        # db.add(db_image)
-        # db.commit()
+        db = SessionLocal()
+
+        db_image = ImageMetadata(
+            name=filename,
+            size=size,
+            extension=extension,
+            last_update=datetime.utcnow()
+        )
+        db.add(db_image)
+        db.commit()
 
         return {"message": "Image uploaded", "name": filename, "size": size}
     except Exception as e:
