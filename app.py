@@ -25,7 +25,7 @@ DB_PASSWORD = ssm.get_parameter(Name="/db/password", WithDecryption=True)["Param
 DB_USERNAME = ssm.get_parameter(Name="/db/username")["Parameter"]["Value"]
 SNS_TOPIC_ARN = ssm.get_parameter(Name="sns_topic")["Parameter"]["Value"]
 SQS_URL = ssm.get_parameter(Name="sqs_queue")["Parameter"]["Value"]
-DNS_NAME = ssm.get_parameter(Name="dns_name")["Parameter"]["Value"]
+# DNS_NAME = ssm.get_parameter(Name="dns_name")["Parameter"]["Value"]
 
 engine = create_engine(f"mysql+pymysql://{DB_USERNAME}:{DB_PASSWORD}@{DB_URL}:3306/image_metadata")
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -194,40 +194,40 @@ def unsubscribe(email: str):
     return {"error": "Subscription not found"}, 404
 
 
-@app.on_event("startup")
-def start_sqs_to_sns_worker():
-    import threading
-    threading.Thread(target=process_queue, daemon=True).start()
-
-
-def process_queue():
-    while True:
-        response = sqs.receive_message(
-            QueueUrl=SQS_URL,
-            MaxNumberOfMessages=10,
-            WaitTimeSeconds=10
-        )
-        for msg in response.get("Messages", []):
-            body = json.loads(msg["Body"])
-            message_text = (
-                f"New image uploaded!\n"
-                f"Name: {body['name']}\n"
-                f"Size: {body['size']} bytes\n"
-                f"Extension: {body['extension']}\n"
-                f"Download: {DNS_NAME}/download/{body['name']}"
-            )
-            sns.publish(
-                TopicArn=SNS_TOPIC_ARN,
-                Message=message_text,
-                MessageAttributes={
-                    "extension": {
-                        "DataType": "String",
-                        "StringValue": body.get("extension", "unknown")
-                    }
-                }
-            )
-            sqs.delete_message(
-                QueueUrl=SQS_URL,
-                ReceiptHandle=msg["ReceiptHandle"]
-            )
-        time.sleep(5)
+# @app.on_event("startup")
+# def start_sqs_to_sns_worker():
+#     import threading
+#     threading.Thread(target=process_queue, daemon=True).start()
+#
+#
+# def process_queue():
+#     while True:
+#         response = sqs.receive_message(
+#             QueueUrl=SQS_URL,
+#             MaxNumberOfMessages=10,
+#             WaitTimeSeconds=10
+#         )
+#         for msg in response.get("Messages", []):
+#             body = json.loads(msg["Body"])
+#             message_text = (
+#                 f"New image uploaded!\n"
+#                 f"Name: {body['name']}\n"
+#                 f"Size: {body['size']} bytes\n"
+#                 f"Extension: {body['extension']}\n"
+#                 f"Download: {DNS_NAME}/download/{body['name']}"
+#             )
+#             sns.publish(
+#                 TopicArn=SNS_TOPIC_ARN,
+#                 Message=message_text,
+#                 MessageAttributes={
+#                     "extension": {
+#                         "DataType": "String",
+#                         "StringValue": body.get("extension", "unknown")
+#                     }
+#                 }
+#             )
+#             sqs.delete_message(
+#                 QueueUrl=SQS_URL,
+#                 ReceiptHandle=msg["ReceiptHandle"]
+#             )
+#         time.sleep(5)
